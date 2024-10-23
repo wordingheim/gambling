@@ -1,0 +1,187 @@
+import random
+class Database():
+    def __init__(self, layers, usrcount, totalpool):
+        self.layers = []
+        self.users = []
+        self.userspool = []
+        self.totalpool = totalpool
+        self.totalpower = 0
+
+        for row in layers:
+            temp = Layer(row[0], row[1])
+            self.layers.append(temp)
+        for id in range(usrcount):
+            temp = User(2000+id, 100)
+
+            self.users.append(temp)
+            self.userspool.append(temp)
+            self.totalpower += temp.points
+
+    def calclayer(self,ind):
+        self.totalpower = 0
+        layer = self.layers[ind]
+        layer.calcvals(len(self.userspool))
+
+        order_array = []
+        while self.userspool:
+            usr = random.choice(self.userspool)
+            self.userspool.remove(usr)
+
+            usr.mult(layer.valslist[len(order_array)])
+            self.totalpower += usr.points
+            
+            usr.place = len(order_array)+1
+
+            if usr.points > 0:
+                order_array.append(usr)
+        self.userspool = order_array
+
+
+    def random_cashout(self, proportion):
+        number = int(len(self.userspool)* proportion)
+        cashamount = 0
+        for _ in range(number):
+            usr = random.choice(self.userspool)
+            self.userspool.remove(usr)
+            amount = usr.cashout(self.totalpool, self.totalpower)
+            cashamount += amount
+        self.totalpool -= cashamount
+        self.recalc()
+
+    def allcashout(self):
+        number = len(self.userspool)
+        cashamount = 0
+        for usr in self.userspool:
+            
+            amount = usr.cashout(self.totalpool, self.totalpower)
+            cashamount += amount
+        self.userspool = []
+        self.totalpool -= cashamount
+        self.recalc()
+            
+        
+
+    
+    def recalc(self):
+        self.totalpower = 0
+        for usr in self.userspool:
+            self.totalpower += usr.points
+
+    
+    def printusers(self):
+        print(f"TOTAL POOL: ${self.totalpool} ")
+        print(f"USERS IN POOL: {len(self.userspool)} USERS")
+        print(f"TOTAL POWER: {self.totalpower}")
+        print("USERS")
+        
+
+        for usr in self.userspool:
+            print(usr)
+        print()
+
+    def printallusers(self):
+        print("ALL USERS")
+        
+
+        for usr in self.users:
+            print(usr)
+        print()
+            
+
+
+        
+    
+
+class Layer():
+    def __init__(self, divisions, specials):
+        self.divisions = divisions
+        self.specials = specials
+        self.valslist = []
+    
+    def calcvals(self, poolsize):
+        self.valslist = [0] * poolsize
+        total = 0
+
+        i = 0
+        for tup in self.divisions:
+            proportion = tup[0]
+            value = tup[1]
+
+            numplayers = int(poolsize*proportion)
+            for ind in range(i, numplayers):
+                self.valslist[ind] = value
+            i = numplayers
+        
+        for tup in self.specials:
+            ind = tup[0]
+            value = tup[1]
+            if ind-1 < len(self.valslist):
+                self.valslist[ind-1] = value
+
+        return self.valslist
+    
+class User():
+    def __init__(self, id, points):
+        self.id = id
+        self.points = points
+        self.earnings = 0
+        self.place = None
+
+    def cashout(self, totalpower, totalpoints):
+        self.earnings += totalpower * (self.points/totalpoints)
+        self.points = 0
+        return self.earnings
+
+    def commit(self, amount):
+        self.earnings += amount
+        self.points -= amount
+
+    def mult(self, amount):
+        self.points *= amount
+
+    def __str__(self):
+        return f"Place: {self.place}, Id: {self.id}, Earnings: {self.earnings}, Points: {self.points}"
+    def __repr__(self):
+        return f"Place: {self.place}, Id: {self.id}, Earnings: {self.earnings}, Points: {self.points}"
+
+
+
+div = [
+    (0.1, 2),
+    (0.3, 1.5),
+    (0.5, 1.2),
+    (0.6, 1),
+    (0.8, 0.5),
+    (1.0, 0)
+    ]
+spc = [
+    (69, 5),
+    (88, 5)
+    ]
+
+
+if __name__ == "__main__":
+    lyr = Layer(div, spc)
+    a = lyr.calcvals(100)
+    #print(a)
+    #print(len(a))
+    db = Database([(div, spc)], 100, 100000)
+    db.printusers()
+    db.random_cashout(0.2)
+    db.printusers()
+    db.calclayer(0)
+    db.printusers()
+
+    db.random_cashout(0.2)
+    db.printusers()
+    db.calclayer(0)
+    db.printusers()
+
+
+
+    db.allcashout()
+    db.printallusers()
+
+    
+
+
